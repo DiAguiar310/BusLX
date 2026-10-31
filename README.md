@@ -1,0 +1,2 @@
+# BusLX
+BusLX é uma app Android open source, para ver os autocarros da Carris em tempo real. Paragens, carreiras, favoritos e mapa ao vivo, com dados públicos GTFS/GTFS-RT e sem servidor próprio. Feita em .NET MAUI, leve e pensada para o dia a dia em Lisboa.
