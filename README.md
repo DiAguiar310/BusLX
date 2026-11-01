@@ -20,6 +20,10 @@
 > autocarros da Carris em tempo real. Paragens, carreiras, favoritos e um mapa
 > ao vivo, com dados públicos GTFS/GTFS-RT e **sem servidor próprio**.
 
+> **Para usar a app basta a APK.** Não precisas de servidor local, backend,
+> conta ou computador ligado. A base de horários vai dentro do APK; só as
+> posições em tempo real precisam de internet.
+
 <p align="center">
   <img src="docs/screenshots/home.png" width="230" alt="Ecrã inicial do BusLX">
   <img src="docs/screenshots/stop-detail.png" width="230" alt="Chegadas em tempo real numa paragem">
