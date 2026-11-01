@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ViaLX — Lisboa em movimento</title>
+<meta name="description" content="ViaLX: horários, paragens, carreiras e planeador de Lisboa com dados públicos GTFS/GTFS-RT da Carris. Projeto independente.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="preloader" aria-hidden="true">
+  <div class="pre-bus"><span></span><span></span><span></span></div>
+  <p>A ligar à cidade…</p>
+</div>
+<div id="progress" aria-hidden="true"></div>
+
+<header id="nav">
+  <a class="logo" href="#topo">Via<span>LX</span></a>
+  <nav>
+    <a href="#direto">Direto</a>
+    <a href="#rede">Rede</a>
+    <a href="#planeador">Planear</a>
+    <a href="#mapa">Mapa vivo</a>
+    <a href="#api">API</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <div class="nav-right">
+    <span id="clock" title="Hora local">--:--:--</span>
+    <span id="mock-dot" class="dot" title="Estado da API">●</span>
+    <a class="btn small" href="#planeador">Planear viagem</a>
+  </div>
+</header>
+
+<main id="topo">
+<!-- HERO -->
+<section class="hero">
+  <canvas id="routes-canvas" aria-hidden="true"></canvas>
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <p class="kicker reveal">Lisboa · tempo real · projeto independente</p>
+    <h1 class="reveal">A cidade<br><em>mexe-se.</em> Tu também.</h1>
+    <p class="lede reveal">ViaLX mostra paragens, carreiras, chegadas ao minuto e o melhor caminho — com os dados públicos GTFS/GTFS-RT da Carris, polling de 10 segundos e um servidor próprio que junta horários e veículos em tempo real.</p>
+    <div class="hero-cta reveal">
+      <a class="btn primary" href="#direto">Ver chegadas agora</a>
+      <a class="btn ghost" href="#planeador">Planear percurso</a>
+    </div>
+    <div class="stats reveal">
+      <div class="stat"><strong data-count="2346">0</strong><span>paragens reais</span></div>
+      <div class="stat"><strong data-count="113">0</strong><span>carreiras</span></div>
+      <div class="stat"><strong data-count="10">0</strong><span>segundos de polling</span></div>
+      <div class="stat"><strong data-count="2472277">0</strong><span>horários no feed</span></div>
+    </div>
+  </div>
+  <div class="hero-ticker" aria-hidden="true"><div class="ticker-track" id="ticker-track"></div></div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true"><div class="marquee-track">
+  <span>726 Pontinha</span><i>◆</i><span>727 Restelo</span><i>◆</i><span>736 Odivelas</span><i>◆</i><span>744 Moscavide</span><i>◆</i><span>tempo real</span><i>◆</i><span>offline primeiro</span><i>◆</i>
+  <span>726 Pontinha</span><i>◆</i><span>727 Restelo</span><i>◆</i><span>736 Odivelas</span><i>◆</i><span>744 Moscavide</span><i>◆</i><span>tempo real</span><i>◆</i><span>offline primeiro</span><i>◆</i>
+</div></div>
+
+<!-- DIRETO -->
+<section id="direto" class="section">
+  <div class="section-head reveal">
+    <p class="kicker">Ao minuto</p>
+    <h2>Chegadas em direto</h2>
+    <p>Escolhe a paragem. O painel faz countdown animado e refresca sozinho.</p>
+  </div>
+  <div class="board-wrap reveal">
+    <div class="board-controls">
+      <label>Paragem
+        <select id="stop-select"></select>
+      </label>
+      <label class="switch"><input type="checkbox" id="poll-toggle" checked><span></span> polling 10s</label>
+      <span id="board-status" class="status">a ligar…</span>
+    </div>
+    <div id="board" class="board"></div>
+  </div>
+</section>
+
+<!-- REDE -->
+<section id="rede" class="section alt">
+  <div class="section-head reveal">
+    <p class="kicker">A rede toda</p>
+    <h2>Paragens &amp; carreiras</h2>
+    <p>Pesquisa, filtra e toca para ver detalhe. Cartões com tilt 3D.</p>
+  </div>
+  <div class="tabs reveal">
+    <button class="tab active" data-tab="stops">Paragens</button>
+    <button class="tab" data-tab="routes">Carreiras</button>
+    <button class="tab" data-tab="alerts">Alertas</button>
+  </div>
+  <input id="search" class="search reveal" type="search" placeholder="Pesquisar… (ex: 726, Campo, Restelo)">
+  <div id="cards" class="cards reveal"></div>
+</section>
+
+<!-- PLANEADOR -->
+<section id="planeador" class="section">
+  <div class="section-head reveal">
+    <p class="kicker">Porta a porta</p>
+    <h2>Planeador</h2>
+    <p>Origem, destino e hora. O ViaLX desenha a solução passo a passo.</p>
+  </div>
+  <form id="planner-form" class="planner reveal">
+    <label>Origem<input id="p-from" value="Campo Pequeno" required></label>
+    <label>Destino<input id="p-to" value="Cais do Sodré" required></label>
+    <label>Partida<input id="p-when" type="time" value="08:30"></label>
+    <button class="btn primary" type="submit">Calcular</button>
+  </form>
+  <div id="plan-result" class="timeline reveal"></div>
+</section>
+
+<!-- MAPA VIVO -->
+<section id="mapa" class="section alt">
+  <div class="section-head reveal">
+    <p class="kicker">Viaturas em movimento</p>
+    <h2>Mapa vivo</h2>
+    <p>Posições reais da carreira selecionada, atualizadas a cada 10 segundos.</p>
+  </div>
+  <div class="map-wrap reveal">
+    <div class="map-controls">
+      <label>Carreira
+        <select id="route-select"></select>
+      </label>
+      <span id="veh-status" class="status">—</span>
+    </div>
+    <svg id="livemap" viewBox="0 0 800 420" role="img" aria-label="Mapa esquemático com viaturas animadas">
+      <defs>
+        <linearGradient id="linegrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#6C4CF1"/><stop offset=".5" stop-color="#2DD4BF"/><stop offset="1" stop-color="#C9F24B"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="800" height="420" rx="24" class="map-bg"/>
+      <g class="grid" aria-hidden="true"></g>
+      <path id="route-path" d="M60,340 C200,300 260,180 400,200 S620,120 740,80" fill="none" stroke="url(#linegrad)" stroke-width="6" stroke-linecap="round"/>
+      <g id="map-stops"></g>
+      <g id="vehicles"></g>
+    </svg>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section id="como" class="section">
+  <div class="section-head reveal">
+    <p class="kicker">Por dentro</p>
+    <h2>Como funciona</h2>
+  </div>
+  <ol class="steps">
+    <li class="reveal"><strong>01 · Observámos</strong><span>APK oficial analisado estaticamente: 91 assemblies .NET, DTOs e 18 operações. Nada executado, nada copiado.</span></li>
+    <li class="reveal"><strong>02 · Modelámos</strong><span>Contratos próprios em OpenAPI + servidor local que importa o GTFS para SQLite e cruza horários com o GTFS-RT.</span></li>
+    <li class="reveal"><strong>03 · Construímos</strong><span>App .NET MAUI + este site, polling de 10s, SQLite offline, mapas com chave própria.</span></li>
+    <li class="reveal"><strong>04 · Ligamos</strong><span>Ao GTFS público da Carris, sem chave: feed estático, posições em tempo real e planeador próprio. Nada de credenciais da app original.</span></li>
+  </ol>
+</section>
+
+<!-- API -->
+<section id="api" class="section alt">
+  <div class="section-head reveal">
+    <p class="kicker">Para developers</p>
+    <h2>API ViaLX</h2>
+    <p>Base: <code id="api-base">http://127.0.0.1:8080/mock/api/v2.10</code> <button id="copy-base" class="btn small">copiar</button></p>
+  </div>
+  <div class="table-wrap reveal"><table>
+    <thead><tr><th>Método</th><th>Rota</th><th>Devolve</th><th></th></tr></thead>
+    <tbody id="api-table"></tbody>
+  </table></div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="section">
+  <div class="section-head reveal">
+    <p class="kicker">Dúvidas</p>
+    <h2>Perguntas frequentes</h2>
+  </div>
+  <div class="faq reveal">
+    <details open><summary>Isto é a app oficial da Carris?</summary><p>Não. ViaLX é um projeto independente e clean-room. Não usa marca, código, chaves nem servidores da Carris/Tecmic.</p></details>
+    <details><summary>De onde vêm os dados?</summary><p>Do GTFS e GTFS-RT públicos da Carris, sem autenticação. O servidor ViaLX importa o feed estático para SQLite e cruza os horários com as posições dos veículos.</p></details>
+    <details><summary>Funciona offline?</summary><p>A app guarda favoritos e dados em SQLite; as chegadas em direto precisam de rede. Este site funciona enquanto o servidor local estiver a correr.</p></details>
+    <details><summary>Porque 10 segundos?</summary><p>É o intervalo que a app original usa para não perderes o autocarro. O servidor ViaLX também faz cache do GTFS-RT durante 10 segundos.</p></details>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta reveal">
+  <h2>Pronto para andar?</h2>
+  <p>Corre o servidor ViaLX e abre o site. A cidade já está à tua espera.</p>
+  <div class="code">rebuild/.venv/bin/python rebuild/server/carris_server.py</div>
+  <div class="hero-cta"><a class="btn primary" href="#direto">Começar agora</a></div>
+</section>
+</main>
+
+<footer>
+  <div class="foot">
+    <div><strong>ViaLX</strong><span> — Lisboa em movimento. Projeto independente, dados públicos GTFS da Carris.</span></div>
+    <div class="foot-links"><a href="#api">API</a><a href="#faq">FAQ</a><a href="#topo">Topo ↑</a></div>
+  </div>
+</footer>
+<div id="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:CarrisRebuild.Models"
+             x:Class="CarrisRebuild.Pages.StopDetailPage" BackgroundColor="{StaticResource AppBackground}"
+             Title="Paragem">
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" Padding="18,12,18,0" RowSpacing="12">
+
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <Label Text="Chegadas em tempo real" FontSize="22" FontAttributes="Bold" />
+      <Frame Grid.Column="1" Style="{StaticResource Pill}" Padding="9,4">
+        <HorizontalStackLayout Spacing="5">
+          <BoxView Style="{StaticResource LiveDot}" />
+          <Label Text="10 S" Style="{StaticResource PillText}" />
+        </HorizontalStackLayout>
+      </Frame>
+    </Grid>
+
+    <Label Grid.Row="1" Text="Atualiza automaticamente de 10 em 10 segundos."
+           Style="{StaticResource MutedText}" Margin="0,-6,0,0" />
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="10">
+      <Button x:Name="FavButton" Text="☆ Guardar" Style="{StaticResource OutlineButton}"
+              FontSize="13" Clicked="OnFav" />
+      <Button x:Name="TowardsButton" Grid.Column="1" Text="Autocarros a caminho"
+              Style="{StaticResource SecondaryButton}" Clicked="OnTowards"
+              FontSize="12" Padding="8,0" />
+    </Grid>
+
+    <VerticalStackLayout Grid.Row="3" Spacing="6">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+        <BoxView Style="{StaticResource SectionBar}" />
+        <Label Grid.Column="1" Text="Carreiras nesta paragem" Style="{StaticResource SectionTitle}" />
+      </Grid>
+      <Frame Style="{StaticResource Card}" Padding="10,6">
+        <CollectionView x:Name="RoutesList" HeightRequest="46" SelectionMode="None">
+          <CollectionView.ItemsLayout>
+            <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8" />
+          </CollectionView.ItemsLayout>
+          <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="models:RouteDto">
+              <Frame Style="{StaticResource RouteBadge}" Padding="12,7"
+                     BackgroundColor="{Binding Number, Converter={StaticResource RouteColor}}"
+                     BorderColor="{Binding Number, Converter={StaticResource RouteColor}}">
+                <Frame.GestureRecognizers>
+                  <TapGestureRecognizer Tapped="OnRouteTap" />
+                </Frame.GestureRecognizers>
+                <Label Text="{Binding Number}" Style="{StaticResource RouteBadgeText}" FontSize="15"
+                       TextColor="{Binding Number, Converter={StaticResource RouteColor}, ConverterParameter=Text}" />
+              </Frame>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </Frame>
+    </VerticalStackLayout>
+
+    <Grid Grid.Row="4" ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,2,0,0">
+      <BoxView Style="{StaticResource SectionBar}" />
+      <Label Grid.Column="1" Text="Próximas partidas" Style="{StaticResource SectionTitle}" />
+    </Grid>
+
+    <CollectionView x:Name="List" Grid.Row="5" SelectionMode="None"
+                    VerticalScrollBarVisibility="Never" Margin="0,0,0,20">
+      <CollectionView.ItemsLayout>
+        <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+      </CollectionView.ItemsLayout>
+      <CollectionView.ItemTemplate>
+        <DataTemplate x:DataType="models:EstimationDto">
+          <Frame Style="{StaticResource Card}" Padding="14">
+            <Frame.GestureRecognizers>
+              <TapGestureRecognizer Tapped="OnEstimationTap" />
+            </Frame.GestureRecognizers>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+              <Frame Style="{StaticResource RouteBadge}"
+                     BackgroundColor="{Binding RouteNumber, Converter={StaticResource RouteColor}}"
+                     BorderColor="{Binding RouteNumber, Converter={StaticResource RouteColor}}">
+                <Label Text="{Binding RouteNumber}" Style="{StaticResource RouteBadgeText}"
+                       TextColor="{Binding RouteNumber, Converter={StaticResource RouteColor}, ConverterParameter=Text}" />
+              </Frame>
+              <VerticalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                <Label Text="{Binding Headsign}" FontAttributes="Bold"
+                       LineBreakMode="TailTruncation" MaxLines="2" />
+                <Frame Padding="7,3" CornerRadius="99" HasShadow="False"
+                       BackgroundColor="{StaticResource YellowSoft}"
+                       BorderColor="{StaticResource YellowSoft}"
+                       HorizontalOptions="Start">
+                  <Frame.Triggers>
+                    <DataTrigger TargetType="Frame" Binding="{Binding Realtime}" Value="True">
+                      <Setter Property="BackgroundColor" Value="{StaticResource BlueSoft}" />
+                      <Setter Property="BorderColor" Value="{StaticResource BlueSoft}" />
+                    </DataTrigger>
+                  </Frame.Triggers>
+                  <Label Text="{Binding StatusText}" FontSize="10" FontAttributes="Bold"
+                         TextColor="{StaticResource BrandInk}">
+                    <Label.Triggers>
+                      <DataTrigger TargetType="Label" Binding="{Binding Realtime}" Value="True">
+                        <Setter Property="TextColor" Value="{StaticResource BrandBlue}" />
+                      </DataTrigger>
+                    </Label.Triggers>
+                  </Label>
+                </Frame>
+              </VerticalStackLayout>
+              <VerticalStackLayout Grid.Column="2" Spacing="2" VerticalOptions="Center"
+                                   HorizontalOptions="End">
+                <Label Text="{Binding EtaText}" FontAttributes="Bold" FontSize="22"
+                       HorizontalTextAlignment="End" />
+                <Label Text="Ver no mapa" FontSize="10"
+                       TextColor="{StaticResource BrandBlue}" HorizontalTextAlignment="End"
+                       IsVisible="{Binding CanTrack}" />
+              </VerticalStackLayout>
+            </Grid>
+          </Frame>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+      <CollectionView.EmptyView>
+        <VerticalStackLayout Spacing="4" HorizontalOptions="Center" Padding="0,26">
+          <Label Text="Sem estimativas de momento." FontAttributes="Bold"
+                 HorizontalTextAlignment="Center" />
+          <Label Text="Tenta novamente dentro de alguns segundos."
+                 Style="{StaticResource MutedText}" HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+      </CollectionView.EmptyView>
+    </CollectionView>
+  </Grid>
+</ContentPage>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:CarrisRebuild.Models"
+             x:Class="CarrisRebuild.Pages.RoutesPage" BackgroundColor="{StaticResource AppBackground}"
+             Title="Carreiras">
+  <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="18,12,18,0" RowSpacing="10">
+    <VerticalStackLayout Spacing="2">
+      <Label Text="Rede de carreiras" FontSize="25" FontAttributes="Bold" />
+      <Label Text="Todas as carreiras da Carris." Style="{StaticResource MutedText}" />
+    </VerticalStackLayout>
+
+    <Frame Grid.Row="1" Style="{StaticResource SearchCard}">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+        <Image Source="icon_search.png" WidthRequest="20" HeightRequest="20"
+               Aspect="AspectFit" VerticalOptions="Center" />
+        <Entry x:Name="Search" Grid.Column="1" Placeholder="Pesquisar carreira"
+               Style="{StaticResource SearchEntry}" ClearButtonVisibility="WhileEditing"
+               ReturnType="Search" TextChanged="OnSearch" Completed="OnSearchPressed" />
+      </Grid>
+    </Frame>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <Label x:Name="CountLabel" TextColor="{StaticResource BrandBlue}"
+             FontSize="12" FontAttributes="Bold" VerticalOptions="Center" Margin="2,0" />
+      <Frame Grid.Column="1" Style="{StaticResource Pill}" Padding="9,4">
+        <Label Text="CARRIS" Style="{StaticResource PillText}" />
+      </Frame>
+    </Grid>
+
+    <CollectionView x:Name="List" Grid.Row="3" SelectionMode="None"
+                    VerticalScrollBarVisibility="Never" Margin="0,0,0,20">
+      <CollectionView.ItemsLayout>
+        <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+      </CollectionView.ItemsLayout>
+      <CollectionView.ItemTemplate>
+        <DataTemplate x:DataType="models:RouteDto">
+          <Frame Style="{StaticResource Card}" Padding="14">
+            <Frame.GestureRecognizers>
+              <TapGestureRecognizer Tapped="OnRouteTap" CommandParameter="{Binding .}" />
+            </Frame.GestureRecognizers>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+              <Frame Style="{StaticResource RouteBadge}"
+                     BackgroundColor="{Binding Number, Converter={StaticResource RouteColor}}"
+                     BorderColor="{Binding Number, Converter={StaticResource RouteColor}}">
+                <Label Text="{Binding Number}" Style="{StaticResource RouteBadgeText}"
+                       TextColor="{Binding Number, Converter={StaticResource RouteColor}, ConverterParameter=Text}" />
+              </Frame>
+              <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                <Label Text="{Binding Name}" FontAttributes="Bold" LineBreakMode="TailTruncation" />
+                <Label Text="{Binding Direction}" Style="{StaticResource MutedText}" />
+              </VerticalStackLayout>
+              <Label Grid.Column="2" Text="›" FontSize="24" TextColor="{StaticResource BrandBlue}"
+                     VerticalOptions="Center" />
+            </Grid>
+          </Frame>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+      <CollectionView.EmptyView>
+        <VerticalStackLayout Spacing="4" HorizontalOptions="Center" Padding="0,30">
+          <Label Text="Sem resultados" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+          <Label Text="Tenta outro número ou nome." Style="{StaticResource MutedText}"
+                 HorizontalTextAlignment="Center" />
+        </VerticalStackLayout>
+      </CollectionView.EmptyView>
+    </CollectionView>
+  </Grid>
+</ContentPage>

@@ -1,0 +1,51 @@
+# .NET / MAUI
+**/bin/
+**/obj/
+**/publish/
+*.user
+*.suo
+*.userprefs
+*.csproj.user
+.vs/
+.idea/
+.vscode/
+
+# Segredos e assinaturas locais
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.pfx
+*.p12
+*.mobileprovision
+
+# Binários e artefactos de build
+*.apk
+*.aab
+*.ipa
+dist/*.apk
+dist/*.sha256
+
+# Python (servidor de referência / scripts)
+.venv/
+venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+server/cache/
+
+# Dados locais e logs
+*.db
+*.db3
+*.sqlite
+*.sqlite3
+*.log
+
+# Base GTFS grande: descarregada da Release com scripts/fetch-gtfs.sh
+src/CarrisRebuild/Resources/Raw/gtfs.db.gz
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+*.swp

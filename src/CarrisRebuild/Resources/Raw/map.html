@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<link rel="stylesheet" href="leaflet/leaflet.css" />
+<style>
+  :root {
+    --yellow: #ffcc00;
+    --blue: #00569f;
+    --black: #1d1d1b;
+    --muted: #5e6b78;
+    --white: #ffffff;
+    --line: #dde7f0;
+    --blue-soft: #e8f1fa;
+    --yellow-soft: #fff4cc;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--black);
+    background: #f2f5f8;
+  }
+  #map { position: absolute; inset: 0; z-index: 0; background: #f2f5f8; }
+
+  .hud {
+    position: absolute;
+    z-index: 900;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(29, 29, 27, 0.08);
+  }
+  .hud-mark {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--blue);
+    color: var(--yellow);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.4px;
+  }
+  .hud-copy { min-width: 0; flex: 1; }
+  .hud-title {
+    font-size: 15px;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hud-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hud-count {
+    flex: 0 0 auto;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 9px;
+    border-radius: 999px;
+    background: var(--yellow);
+    color: var(--black);
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .hud-refresh {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 0;
+    background: var(--blue-soft);
+    color: var(--blue);
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+  }
+  .hud-refresh:active { background: var(--yellow-soft); }
+
+  .legend {
+    position: absolute;
+    z-index: 900;
+    left: 12px;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 9px 11px;
+    border-radius: 14px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(29, 29, 27, 0.08);
+    font-size: 11px;
+    color: var(--black);
+  }
+  .legend-row { display: flex; align-items: center; gap: 7px; }
+  .dot-stop {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #FFFFFF; border: 2px solid var(--black);
+    flex: 0 0 auto;
+  }
+  .dot-stop.focus-stop { background: var(--yellow); }
+  .line-route {
+    position: relative;
+    width: 28px; height: 9px; border-radius: 5px;
+    background: var(--yellow); border: 1px solid var(--black);
+    flex: 0 0 auto;
+  }
+  #route-legend { display: none; }
+  #route-legend-list { display: flex; flex-direction: column; gap: 5px; }
+  .route-legend-item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .route-swatch {
+    position: relative;
+    width: 28px; height: 9px; border-radius: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.28); flex: 0 0 auto;
+  }
+  .route-bus {
+    position: absolute; left: 50%; top: 50%;
+    width: 11px; height: 7px; transform: translate(-50%, -50%);
+    border-radius: 2px; background: #FFFFFF; border: 1px solid var(--black);
+  }
+  .route-bus::before, .route-bus::after {
+    content: ""; position: absolute; bottom: -2px;
+    width: 2px; height: 2px; border-radius: 50%; background: var(--black);
+  }
+  .route-bus::before { left: 1px; }
+  .route-bus::after { right: 1px; }
+  .route-number-badge {
+    display: inline-grid;
+    place-items: center;
+    min-width: 28px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    font-weight: 800;
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  .directions {
+    position: absolute;
+    z-index: 899;
+    top: 78px;
+    left: 12px;
+    right: 12px;
+    display: none;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 14px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(29, 29, 27, 0.06);
+  }
+  .directions.show { display: flex; }
+  .directions button {
+    flex: 1;
+    min-width: 0;
+    height: 46px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--black);
+    font: 700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    line-height: 1.15;
+    padding: 2px 4px;
+  }
+  .directions button.active { background: var(--blue); color: var(--white); }
+  .dir-kind { font-size: 12px; font-weight: 800; }
+  .dir-dest {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .directions button.active .dir-dest { color: var(--blue-soft); }
+
+  .offline {
+    position: absolute;
+    z-index: 950;
+    top: 142px;
+    left: 12px;
+    right: 12px;
+    display: none;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--yellow-soft);
+    border: 1px solid #ffe08a;
+    color: #6a4f00;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(29, 29, 27, 0.06);
+  }
+  .offline.show { display: block; }
+
+  .bus-marker-wrap { background: transparent; border: 0; }
+  .bus-dot-wrap { background: transparent; border: 0; }
+  .bus-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--yellow);
+    border: 2px solid var(--black);
+    box-shadow: 0 1px 4px rgba(29, 29, 27, 0.28);
+  }
+  .bus-marker {
+    width: 36px;
+    height: 24px;
+    border-radius: 8px;
+    background: var(--yellow);
+    color: var(--black);
+    border: 2px solid var(--black);
+    box-shadow: 0 2px 6px rgba(29, 29, 27, 0.22);
+    display: grid;
+    place-items: center;
+    font: 800 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    letter-spacing: -0.2px;
+  }
+  .leaflet-popup-content-wrapper {
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 14px rgba(29, 29, 27, 0.12);
+  }
+  .leaflet-popup-tip { box-shadow: 0 4px 14px rgba(29, 29, 27, 0.12); }
+  .leaflet-popup-content { margin: 12px 14px; font-size: 13px; line-height: 1.45; }
+  .leaflet-popup-content b { font-size: 15px; }
+  .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
+  .popup-time { color: var(--muted); font-size: 11px; }
+  .leaflet-control-attribution {
+    font-size: 9px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    color: var(--muted) !important;
+  }
+  .leaflet-bar {
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    overflow: hidden;
+  }
+  .leaflet-control-zoom a {
+    color: var(--blue) !important;
+    background: var(--white) !important;
+    border-bottom-color: var(--line) !important;
+  }
+  .leaflet-control-zoom a:last-child { border-bottom: 0 !important; }
+</style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div class="hud">
+    <div class="hud-mark">LX</div>
+    <div class="hud-copy">
+      <div class="hud-title" id="title">Toda a rede</div>
+      <div class="hud-sub" id="updated">A carregar viaturas…</div>
+    </div>
+    <div class="hud-count" id="count">–</div>
+    <button class="hud-refresh" id="refresh" aria-label="Atualizar">↻</button>
+  </div>
+
+  <div class="directions" id="directions">
+    <button type="button" data-dir="">Todas</button>
+    <button type="button" data-dir="Ida">Ida</button>
+    <button type="button" data-dir="Volta">Volta</button>
+  </div>
+
+  <div class="offline" id="offline">Sem ligação ao servidor. A tentar novamente…</div>
+
+  <div class="legend">
+    <div class="legend-row" id="route-legend">
+      <span class="line-route"><span class="route-bus"></span></span> Percurso
+    </div>
+    <div id="route-legend-list"></div>
+    <div class="legend-row">
+      <span class="dot-stop" id="stop-legend-dot"></span>
+      <span id="stop-legend-label">Paragem (zoom +)</span>
+    </div>
+  </div>
+
+  <script src="leaflet/leaflet.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var params = new URLSearchParams(window.location.search);
+      var api = (params.get('api') || 'http://127.0.0.1:8080/mock/api/v2.10').replace(/\/$/, '');
+      var routeFilter = (params.get('route') || '').trim();
+      var directionFilter = (params.get('direction') || '').trim();
+      var focusVehicleId = (params.get('vehicleId') || '').trim();
+      var focusStopId = (params.get('stopId') || '').trim();
+      var focusStopName = (params.get('stopName') || '').trim();
+      var focusMode = !!(focusVehicleId || focusStopId || focusStopName);
+      var localMode = params.get('local') === '1';
+      var localShapes = {};
+      var lastVehicles = [];
+      var directionInfo = {};
+      var lastDataTimestamp = 0;
+      var lastFeedTimestamp = 0;
+      var pollMs = 5000;
+
+      var map = L.map('map', {
+        zoomControl: false,
+        preferCanvas: true,
+        attributionControl: true,
+        fadeAnimation: false,
+        markerZoomAnimation: false,
+        zoomAnimation: false
+      }).setView([38.7369, -9.1426], 12);
+
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        updateWhenIdle: true,
+        updateWhenZooming: false,
+        keepBuffer: 2,
+        detectRetina: false,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Os pontos dos autocarros são desenhados num único canvas. Isto evita
+      // criar milhares de nós DOM (um por autocarro) no mapa de toda a rede.
+      var vehicleRenderer = L.canvas({ padding: 0.5 });
+
+      map.createPane('routeLinePane');
+      map.getPane('routeLinePane').style.zIndex = 350;
+
+      var stopLayer = null;
+      var stopMarkers = new Map();
+      var allStops = [];
+      var stopRenderTimer = null;
+      var vehicleRenderTimer = null;
+      var routeLineLayer = L.layerGroup().addTo(map);
+      var routeShapeLayer = L.layerGroup().addTo(map);
+      var vehicleLayer = L.layerGroup().addTo(map);
+      var vehicleMarkers = new Map();
+      var routeLegendEl = document.getElementById('route-legend');
+      var routeLegendListEl = document.getElementById('route-legend-list');
+      var stopLegendDot = document.getElementById('stop-legend-dot');
+      var stopLegendLabel = document.getElementById('stop-legend-label');
+      var currentRouteShapes = [];
+      var currentRouteLineColor = '#FFCC00';
+      var currentRouteBadgeColor = '#FFCC00';
+      var currentRouteTextColor = '#1D1D1B';
+      var shapeRequest = 0;
+      var refreshTimer = null;
+      var hudTimer = null;
+      var lastCount = 0;
+      var lastRouteNumbers = [];
+      var lastRouteMeta = {};
+      var badgeMode = focusMode || !!routeFilter || map.getZoom() >= 13;
+      var focusVehicleApplied = false;
+      var focusStopMarker = null;
+      var focusStopLatLng = null;
+      var focusStopFitApplied = false;
+
+      var titleEl = document.getElementById('title');
+      var updatedEl = document.getElementById('updated');
+      var countEl = document.getElementById('count');
+      var offlineEl = document.getElementById('offline');
+      var refreshEl = document.getElementById('refresh');
+      var directionsEl = document.getElementById('directions');
+      var directionButtons = directionsEl.querySelectorAll('button');
+
+      if (focusVehicleId) {
+        titleEl.textContent = 'Autocarro ' + focusVehicleId +
+          (routeFilter ? ' · ' + routeFilter : '');
+      } else if (focusStopName) {
+        titleEl.textContent = 'A caminho de ' + focusStopName;
+      } else if (routeFilter) {
+        titleEl.textContent = 'Carreira ' + routeFilter;
+        directionsEl.classList.add('show');
+        routeLegendEl.style.display = 'flex';
+      }
+
+      if (routeFilter) {
+        directionsEl.classList.add('show');
+        routeLegendEl.style.display = 'flex';
+      }
+
+      if (focusStopId || focusStopName) {
+        if (stopLegendDot) stopLegendDot.classList.add('focus-stop');
+        if (stopLegendLabel) stopLegendLabel.textContent = 'Paragem de destino';
+      }
+
+      function directionLabel(code) {
+        var d = directionInfo[code];
+        if (!d) return code || '';
+        return d.circular ? d.label : d.direction + ' → ' + d.shortLabel;
+      }
+
+      function updateHud() {
+        var scope = focusVehicleId
+          ? 'só este autocarro'
+          : focusStopName
+            ? 'a caminho desta paragem'
+            : routeFilter ? '' : 'toda a rede';
+        if (focusStopName && lastRouteNumbers.length)
+          scope += ' · ' + lastRouteNumbers.join(', ');
+        if (directionFilter) scope += (scope ? ' · ' : '') + directionLabel(directionFilter);
+        if (!lastDataTimestamp) {
+          updatedEl.textContent = 'A carregar viaturas… · ' + scope;
+          return;
+        }
+        var age = Math.max(0, Math.round(Date.now() / 1000 - lastDataTimestamp));
+        var ageText = age < 60 ? age + ' s' : Math.floor(age / 60) + ' min';
+        updatedEl.textContent = 'Dados das ' + hhmmss(new Date(lastDataTimestamp * 1000)) +
+          ' · há ' + ageText + (scope ? ' · ' + scope : '');
+      }
+
+      function applyRouteInfo(info) {
+        directionInfo = {};
+        currentRouteBadgeColor = safeColor(info.badgeColor, currentRouteBadgeColor);
+        currentRouteLineColor = safeColor(info.lineColor, currentRouteLineColor);
+        currentRouteTextColor = safeColor(info.textColor, currentRouteTextColor);
+        var legendLine = routeLegendEl.querySelector('.line-route');
+        if (legendLine) legendLine.style.background = currentRouteLineColor;
+        (info.directions || []).forEach(function (d) {
+          directionInfo[d.direction] = d;
+        });
+
+        directionButtons.forEach(function (button) {
+          var code = button.getAttribute('data-dir');
+          var d = directionInfo[code];
+          if (!code || !d) return;
+          button.innerHTML = '<span class="dir-kind">' + esc(d.direction) + '</span>' +
+            '<span class="dir-dest">' + esc(d.circular ? d.label : '→ ' + d.shortLabel) + '</span>';
+        });
+
+        if ((info.directions || []).length < 2) {
+          directionsEl.classList.remove('show');
+          directionFilter = '';
+        } else {
+          directionsEl.classList.add('show');
+        }
+        updateHud();
+        updateVehicleMarkers(lastVehicles);
+      }
+
+      function drawRouteShape(data) {
+        routeLineLayer.clearLayers();
+        var points = data.points || [];
+        if (points.length < 2) return;
+
+        L.polyline(points, {
+          pane: 'routeLinePane', color: '#1D1D1B', weight: 8,
+          opacity: 0.9, lineCap: 'round', lineJoin: 'round'
+        }).addTo(routeLineLayer);
+        var line = L.polyline(points, {
+          pane: 'routeLinePane', color: currentRouteLineColor, weight: 4,
+          opacity: 1, lineCap: 'round', lineJoin: 'round'
+        }).addTo(routeLineLayer);
+
+        var bounds = line.getBounds();
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [26, 26], maxZoom: 15, animate: false });
+        }
+      }
+
+      function drawRouteShapes(shapes) {
+        routeShapeLayer.clearLayers();
+
+        var items = [];
+        var clean = (shapes || []).filter(function (shape) {
+          return shape && Array.isArray(shape.points) && shape.points.length > 1;
+        });
+
+        clean.forEach(function (shape) {
+          var color = safeColor(shape.lineColor, '#8C8C99');
+          var badgeColor = safeColor(shape.badgeColor, color);
+          var textColor = safeColor(shape.textColor, '#1D1D1B');
+          var dashed = shape.direction === 'Volta' ? '8 6' : null;
+          var casingStyle = {
+            pane: 'routeLinePane', color: '#1D1D1B', weight: 8,
+            opacity: 0.32, lineCap: 'round', lineJoin: 'round'
+          };
+          if (dashed) casingStyle.dashArray = dashed;
+          L.polyline(shape.points, casingStyle).addTo(routeShapeLayer);
+          items.push({
+            route: String(shape.routeNumber || '?'),
+            direction: String(shape.direction || ''),
+            points: shape.points,
+            color: color,
+            badgeColor: badgeColor,
+            textColor: textColor,
+            dashed: dashed
+          });
+        });
+
+        items.forEach(function (item) {
+          var lineStyle = {
+            pane: 'routeLinePane', color: item.color, weight: 4,
+            opacity: 0.95, lineCap: 'round', lineJoin: 'round'
+          };
+          if (item.dashed) lineStyle.dashArray = item.dashed;
+          L.polyline(item.points, lineStyle).addTo(routeShapeLayer);
+        });
+
+        if (!items.length) {
+          routeLegendListEl.innerHTML = '';
+          return;
+        }
+
+        var rows = items.slice(0, 8).map(function (item) {
+          var direction = item.direction
+            ? '<span style="color:#5E6B78">' + esc(item.direction) + '</span>'
+            : '';
+          return '<div class="route-legend-item">' +
+            routeBadgeHtml(item.route, item.badgeColor, item.textColor) +
+            '<span class="route-swatch" style="background:' + item.color + '">' +
+            '<span class="route-bus"></span></span>' +
+            direction + '</div>';
+        }).join('');
+        routeLegendListEl.innerHTML =
+          '<div class="legend-row" style="font-weight:700;color:#5E6B78">Traçado</div>' + rows;
+      }
+
+      async function loadRouteShape() {
+        if (!routeFilter) return;
+        if (localMode) {
+          var points = localShapes[directionFilter] || localShapes.all ||
+            localShapes.Ida || localShapes.Volta || [];
+          drawRouteShape({ points: points });
+          return;
+        }
+        var request = ++shapeRequest;
+        try {
+          var query = directionFilter
+            ? '?direction=' + encodeURIComponent(directionFilter)
+            : '';
+          var data = await getJson('/routes/' + encodeURIComponent(routeFilter) + '/shape' + query);
+          if (request === shapeRequest) drawRouteShape(data);
+        } catch (err) {
+          if (request === shapeRequest) routeLineLayer.clearLayers();
+        }
+      }
+
+      async function loadRouteInfo() {
+        if (!routeFilter || localMode) return;
+        try {
+          applyRouteInfo(await getJson('/routes/' + encodeURIComponent(routeFilter)));
+        } catch (err) {
+          // Mantém os botões genéricos; o mapa continua a funcionar.
+        }
+        await loadRouteShape();
+      }
+
+      function setDirection(value, reRender) {
+        directionFilter = value || '';
+        directionButtons.forEach(function (button) {
+          button.classList.toggle('active', button.getAttribute('data-dir') === directionFilter);
+        });
+        if (reRender) {
+          updateVehicleMarkers(lastVehicles);
+          updateHud();
+          loadRouteShape();
+        }
+      }
+      setDirection(directionFilter, false);
+      directionButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          setDirection(button.getAttribute('data-dir'), true);
+        });
+      });
+
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
+      function hhmmss(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+      function esc(v) {
+        return String(v == null ? '' : v)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function safeColor(value, fallback) {
+        return /^#[0-9a-f]{3,8}$/i.test(String(value || '')) ? String(value) : fallback;
+      }
+
+      function routeBadgeHtml(route, badgeColor, textColor) {
+        return '<span class="route-number-badge" style="background:' +
+          safeColor(badgeColor, '#FFCC00') + ';color:' +
+          safeColor(textColor, '#1D1D1B') + '">' + esc(route || '?') + '</span>';
+      }
+
+      async function getJson(path) {
+        var response = await fetch(api + path, { cache: 'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        var headerTs = Number(response.headers.get('X-Feed-Timestamp') || 0);
+        if (headerTs > lastFeedTimestamp) lastFeedTimestamp = headerTs;
+        return response.json();
+      }
+
+      function makeBusIcon(routeNumber, lineColor) {
+        return L.divIcon({
+          className: 'bus-marker-wrap',
+          // O marcador usa a cor do traçado da carreira, não a cor do
+          // badge. Assim uma carreira de bairro (badge amarelo, traçado
+          // verde) aparece verde no mapa.
+          html: '<div class="bus-marker" style="background:' +
+            safeColor(lineColor, '#8C8C99') + ';color:#FFFFFF">' +
+            esc(routeNumber) + '</div>',
+          iconSize: [36, 24],
+          iconAnchor: [18, 12]
+        });
+      }
+
+      function vehiclePopupHtml(v) {
+        var routeNumber = String(v.routeNumber || '');
+        var dirInfo = directionInfo[v.direction];
+        var direction = v.direction
+          ? '<br>' + esc(v.direction) + (dirInfo ? ' · ' + esc(dirInfo.label) : '')
+          : '';
+        var when = v.timestamp
+          ? new Date(v.timestamp * 1000).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+          : hhmmss(new Date());
+        return '<b>Carreira ' + routeBadgeHtml(routeNumber || '?', v.badgeColor, v.textColor) + '</b>' +
+          '<br>Veículo ' + esc(v.vehicleId || '—') +
+          direction +
+          '<br><span class="popup-time">Atualizado às ' + esc(when) + '</span>';
+      }
+
+      function makeVehicleMarker(v) {
+        var lineColor = safeColor(v.lineColor, '#8C8C99');
+        var marker;
+        if (badgeMode) {
+          marker = L.marker([v.lat, v.lng], {
+            icon: makeBusIcon(v.routeNumber || '?', lineColor),
+            keyboard: false,
+            riseOnHover: false
+          });
+          marker._vialxKind = 'badge';
+        } else {
+          // Em zoom afastado, um círculo no canvas é muito mais leve do
+          // que um marcador DOM com ícone próprio.
+          marker = L.circleMarker([v.lat, v.lng], {
+            renderer: vehicleRenderer,
+            radius: 5,
+            color: '#1D1D1B',
+            weight: 1.5,
+            opacity: 0.95,
+            fillColor: lineColor,
+            fillOpacity: 1,
+            interactive: true,
+            bubblingMouseEvents: false
+          });
+          marker._vialxKind = 'dot';
+        }
+        marker._vialxRoute = v.routeNumber;
+        marker._vialxColorKey = v.badgeColor + '|' + lineColor + '|' + v.textColor;
+        marker._vialxBadgeColor = v.badgeColor;
+        marker._vialxLineColor = lineColor;
+        marker._vialxTextColor = v.textColor;
+        marker._vialxData = v;
+        // O popup é construído apenas quando o utilizador o abre. Antes era
+        // reconstruído para todos os autocarros em cada atualização.
+        marker.bindPopup(function () { return vehiclePopupHtml(marker._vialxData); });
+        marker.addTo(vehicleLayer);
+        return marker;
+      }
+
+      function decodeVehicles(payload) {
+        var routes = payload && payload.r ? payload.r : {};
+        var rows = payload && payload.v ? payload.v : [];
+        var out = new Array(rows.length);
+        for (var i = 0; i < rows.length; i++) {
+          var row = rows[i] || [];
+          var route = String(row[1] || '');
+          var meta = routes[route] || [];
+          out[i] = {
+            vehicleId: String(row[0] || ''),
+            routeNumber: route,
+            lat: typeof row[2] === 'number' ? row[2] : NaN,
+            lng: typeof row[3] === 'number' ? row[3] : NaN,
+            direction: String(row[4] || ''),
+            timestamp: Number(row[5] || 0),
+            badgeColor: safeColor(meta[0], '#FFCC00'),
+            lineColor: safeColor(meta[1], '#FFCC00'),
+            textColor: safeColor(meta[2], '#1D1D1B')
+          };
+        }
+        return out;
+      }
+
+      function normalizeStop(s) {
+        if (Array.isArray(s)) {
+          return { id: s[0], number: s[1], name: s[2], lat: s[3], lng: s[4] };
+        }
+        return { id: s.id, number: s.number, name: s.name, lat: s.lat, lng: s.lng };
+      }
+
+      function addStopMarkers(stops) {
+        if (stopLayer) {
+          map.removeLayer(stopLayer);
+          stopLayer = null;
+        }
+        stopMarkers.clear();
+        allStops = [];
+        for (var i = 0; i < (stops || []).length; i++) {
+          var s = normalizeStop(stops[i]);
+          if (typeof s.lat !== 'number' || typeof s.lng !== 'number'
+              || !isFinite(s.lat) || !isFinite(s.lng)) continue;
+          allStops.push(s);
+        }
+        scheduleStopRender(0);
+      }
+
+      function renderStopMarkers() {
+        if (map.getZoom() < 14) {
+          if (stopLayer) {
+            map.removeLayer(stopLayer);
+            stopLayer = null;
+          }
+          stopMarkers.clear();
+          return;
+        }
+
+        // Só materializamos as paragens que estão dentro (ou perto) do
+        // viewport. A rede tem mais de 2300 paragens; criar todas era
+        // sobretudo desperdício de memória e de CPU. A atualização é
+        // incremental para que um simples arrasto não recrie tudo.
+        if (!stopLayer) stopLayer = L.layerGroup().addTo(map);
+        var bounds = map.getBounds().pad(0.12);
+        var seen = new Set();
+        for (var i = 0; i < allStops.length; i++) {
+          var s = allStops[i];
+          if (!bounds.contains([s.lat, s.lng])) continue;
+          var id = String(s.id || (s.lat + ',' + s.lng));
+          seen.add(id);
+          if (stopMarkers.has(id)) continue;
+          var marker = L.circleMarker([s.lat, s.lng], {
+            radius: 3,
+            color: '#1D1D1B',
+            weight: 1,
+            fillColor: '#ffffff',
+            fillOpacity: 1,
+            opacity: 0.9
+          });
+          marker.bindPopup('<b>' + esc(s.name) + '</b><br><span class="popup-time">Paragem ' + esc(s.number || s.id) + '</span>');
+          marker.addTo(stopLayer);
+          stopMarkers.set(id, marker);
+        }
+
+        stopMarkers.forEach(function (marker, id) {
+          if (!seen.has(id)) {
+            stopLayer.removeLayer(marker);
+            stopMarkers.delete(id);
+          }
+        });
+      }
+
+      function scheduleStopRender(delay) {
+        if (stopRenderTimer) clearTimeout(stopRenderTimer);
+        stopRenderTimer = setTimeout(function () {
+          stopRenderTimer = null;
+          renderStopMarkers();
+        }, delay || 0);
+      }
+
+      function scheduleVehicleRender(delay) {
+        if (vehicleRenderTimer) clearTimeout(vehicleRenderTimer);
+        vehicleRenderTimer = setTimeout(function () {
+          vehicleRenderTimer = null;
+          if (badgeMode) updateVehicleMarkers(lastVehicles);
+        }, delay || 0);
+      }
+
+      function updateVehicleMarkers(vehicles) {
+        var seen = new Set();
+        var visible = 0;
+        var routes = [];
+        var routeSet = Object.create(null);
+        var routeMeta = {};
+        // No mapa de toda a rede com badges, só valem a pena os marcadores
+        // que estão perto do viewport. Nos mapas de carreira/paragem/
+        // autocarro mostramos todos os veículos filtrados.
+        var viewport = badgeMode && !focusMode && !routeFilter
+          ? map.getBounds().pad(0.2)
+          : null;
+
+        for (var i = 0; i < vehicles.length; i++) {
+          var v = vehicles[i];
+          if (focusVehicleId && String(v.vehicleId || '') !== focusVehicleId) continue;
+          if (routeFilter && String(v.routeNumber) !== routeFilter) continue;
+          if (directionFilter && String(v.direction || '').toLowerCase() !== directionFilter.toLowerCase()) continue;
+          if (typeof v.lat !== 'number' || typeof v.lng !== 'number'
+              || !isFinite(v.lat) || !isFinite(v.lng)) continue;
+
+          visible++;
+          var routeNumber = String(v.routeNumber || '');
+          var badgeColor = safeColor(v.badgeColor, '#FFCC00');
+          var lineColor = safeColor(v.lineColor, badgeColor);
+          var textColor = safeColor(v.textColor, '#1D1D1B');
+          v.badgeColor = badgeColor;
+          v.lineColor = lineColor;
+          v.textColor = textColor;
+          if (routeNumber && !routeSet[routeNumber]) {
+            routeSet[routeNumber] = true;
+            routes.push(routeNumber);
+            routeMeta[routeNumber] = {
+              badge: badgeColor,
+              line: lineColor,
+              text: textColor
+            };
+          }
+
+          var id = String(v.vehicleId || (v.lat + ',' + v.lng));
+          if (viewport && !viewport.contains([v.lat, v.lng])) continue;
+          seen.add(id);
+
+          var marker = vehicleMarkers.get(id);
+          var kind = badgeMode ? 'badge' : 'dot';
+          if (!marker || marker._vialxKind !== kind) {
+            if (marker) {
+              vehicleLayer.removeLayer(marker);
+              vehicleMarkers.delete(id);
+            }
+            marker = makeVehicleMarker(v);
+            vehicleMarkers.set(id, marker);
+          } else {
+            marker._vialxData = v;
+            var old = marker.getLatLng();
+            if (Math.abs(old.lat - v.lat) > 0.000001
+                || Math.abs(old.lng - v.lng) > 0.000001) {
+              marker.setLatLng([v.lat, v.lng]);
+            }
+
+            var colorKey = badgeColor + '|' + lineColor + '|' + textColor;
+            if (marker._vialxRoute !== routeNumber || marker._vialxColorKey !== colorKey) {
+              marker._vialxRoute = routeNumber;
+              marker._vialxColorKey = colorKey;
+              marker._vialxBadgeColor = badgeColor;
+              marker._vialxLineColor = lineColor;
+              marker._vialxTextColor = textColor;
+              if (kind === 'badge') {
+                marker.setIcon(makeBusIcon(routeNumber || '?', lineColor));
+              } else {
+                marker.setStyle({ fillColor: lineColor });
+              }
+            }
+          }
+        }
+
+        if (focusVehicleId && !focusVehicleApplied) {
+          var focusMarker = vehicleMarkers.get(focusVehicleId);
+          if (focusMarker) {
+            focusVehicleApplied = true;
+            map.setView(focusMarker.getLatLng(), 16, { animate: false });
+            focusMarker.openPopup();
+          }
+        }
+
+        vehicleMarkers.forEach(function (marker, id) {
+          if (!seen.has(id)) {
+            vehicleLayer.removeLayer(marker);
+            vehicleMarkers.delete(id);
+          }
+        });
+
+        routes.sort(function (a, b) {
+          var na = parseInt(a, 10), nb = parseInt(b, 10);
+          if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+          return a.localeCompare(b, 'pt');
+        });
+        lastRouteNumbers = routes.slice(0, 4);
+        lastRouteMeta = routeMeta;
+        lastCount = visible;
+        countEl.textContent = String(visible);
+
+        if (focusStopMarker) {
+          var routeBadges = routes.slice(0, 8).map(function (route) {
+            var meta = routeMeta[route] || {};
+            return routeBadgeHtml(route, meta.badge, meta.text);
+          }).join(' ');
+          if (routes.length > 8) routeBadges += '…';
+          var stopPopup =
+            '<b>' + esc(focusStopName || 'Paragem') + '</b><br>' +
+            '<span class="popup-time">Paragem de destino</span>' +
+            (routeBadges
+              ? '<br><b>A caminho:</b> ' + routeBadges
+              : '<br><span class="popup-time">Sem autocarros a caminho.</span>');
+          focusStopMarker.setPopupContent(stopPopup);
+        }
+
+        if (focusStopLatLng && !focusStopFitApplied && visible > 0) {
+          var center = L.latLng(focusStopLatLng);
+          var nearby = [];
+          vehicleMarkers.forEach(function (marker) {
+            var latLng = marker.getLatLng();
+            if (center.distanceTo(latLng) <= 3000) nearby.push(latLng);
+          });
+
+          if (nearby.length === 0) {
+            map.setView(center, 14, { animate: false });
+          } else {
+            var bounds = L.latLngBounds([center].concat(nearby));
+            map.fitBounds(bounds.pad(0.18), { maxZoom: 15, animate: false });
+          }
+          focusStopFitApplied = true;
+        }
+      }
+
+      var loadingVehicles = false;
+      async function loadVehicles(manual) {
+        if (localMode) return;
+        if (loadingVehicles) return;
+        loadingVehicles = true;
+        try {
+          var endpoint = routeFilter
+            ? '/vehicleStatuses/routeNumber/' + encodeURIComponent(routeFilter)
+            : '/vehicleStatuses';
+          var vehicles = await getJson(endpoint);
+          lastVehicles = vehicles || [];
+          lastDataTimestamp = 0;
+          for (var i = 0; i < lastVehicles.length; i++) {
+            var stamp = Number(lastVehicles[i].feedUpdated || lastVehicles[i].timestamp || 0);
+            if (stamp > lastDataTimestamp) lastDataTimestamp = stamp;
+          }
+          if (!lastDataTimestamp) lastDataTimestamp = lastFeedTimestamp;
+          updateVehicleMarkers(lastVehicles);
+          updateHud();
+          offlineEl.classList.remove('show');
+        } catch (err) {
+          offlineEl.classList.add('show');
+          updatedEl.textContent = lastDataTimestamp
+            ? 'Sem dados novos agora · a tentar novamente…'
+            : 'Sem ligação ao servidor · a tentar novamente…';
+          countEl.textContent = lastCount ? String(lastCount) : '–';
+        } finally {
+          loadingVehicles = false;
+        }
+      }
+
+      map.on('zoomend', function () {
+        var nextBadgeMode = focusMode || !!routeFilter || map.getZoom() >= 13;
+        if (nextBadgeMode !== badgeMode) {
+          badgeMode = nextBadgeMode;
+          // A representação muda entre canvas (pontos) e marcadores DOM
+          // (badges). Reconstruímos só nessa transição.
+          vehicleLayer.clearLayers();
+          vehicleMarkers.clear();
+          updateVehicleMarkers(lastVehicles);
+        } else {
+          scheduleVehicleRender(60);
+        }
+        scheduleStopRender(120);
+      });
+
+      map.on('moveend', function () {
+        scheduleVehicleRender(60);
+        scheduleStopRender(120);
+      });
+
+      refreshEl.addEventListener('click', function () { loadVehicles(true); });
+
+      window.vialxSetStops = function (stops) {
+        addStopMarkers(stops || []);
+      };
+
+      window.vialxSetVehicles = function (payload) {
+        lastVehicles = decodeVehicles(payload || {});
+        lastFeedTimestamp = Number((payload && payload.t) || 0);
+        lastDataTimestamp = lastFeedTimestamp;
+        if (!lastDataTimestamp) {
+          for (var i = 0; i < lastVehicles.length; i++) {
+            var stamp = Number(lastVehicles[i].timestamp || 0);
+            if (stamp > lastDataTimestamp) lastDataTimestamp = stamp;
+          }
+        }
+        updateVehicleMarkers(lastVehicles);
+        updateHud();
+        offlineEl.classList.remove('show');
+      };
+
+      window.vialxSetRoute = function (info, shapes) {
+        localShapes = shapes || {};
+        applyRouteInfo(info || {});
+        loadRouteShape();
+      };
+
+      window.vialxSetRouteShapes = drawRouteShapes;
+
+      window.vialxFocusStop = function (lat, lng, name) {
+        if (typeof lat !== 'number' || typeof lng !== 'number') return;
+        focusStopLatLng = [lat, lng];
+        if (name) focusStopName = name;
+        if (!focusStopMarker) {
+          focusStopMarker = L.circleMarker([lat, lng], {
+            radius: 10,
+            color: '#1D1D1B',
+            weight: 3,
+            fillColor: '#FFCC00',
+            fillOpacity: 1
+          }).addTo(map);
+        } else {
+          focusStopMarker.setLatLng([lat, lng]);
+        }
+        var routeBadges = lastRouteNumbers.map(function (route) {
+          var meta = lastRouteMeta[route] || {};
+          return routeBadgeHtml(route, meta.badge, meta.text);
+        }).join(' ');
+        var routes = routeBadges ? '<br><b>A caminho:</b> ' + routeBadges : '';
+        focusStopMarker.bindPopup(
+          '<b>' + esc(focusStopName || 'Paragem') + '</b><br>' +
+          '<span class="popup-time">Paragem de destino</span>' + routes
+        );
+        map.setView([lat, lng], 15, { animate: false });
+        focusStopMarker.openPopup();
+      };
+
+      window.vialxFocusVehicle = function (vehicleId) {
+        var marker = vehicleMarkers.get(String(vehicleId || ''));
+        if (!marker) return;
+        map.setView(marker.getLatLng(), 16, { animate: false });
+        marker.openPopup();
+      };
+
+      window.vialxShowOffline = function (message) {
+        offlineEl.textContent = message || 'Sem ligação à Carris. A tentar novamente…';
+        offlineEl.classList.add('show');
+      };
+
+      window.vialxPause = function () {
+        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+        if (hudTimer) { clearInterval(hudTimer); hudTimer = null; }
+        if (stopRenderTimer) { clearTimeout(stopRenderTimer); stopRenderTimer = null; }
+        if (vehicleRenderTimer) { clearTimeout(vehicleRenderTimer); vehicleRenderTimer = null; }
+      };
+      window.vialxResume = function () {
+        if (!hudTimer) hudTimer = setInterval(updateHud, 1000);
+        scheduleStopRender(0);
+        if (localMode || refreshTimer) return;
+        loadVehicles(false);
+        refreshTimer = setInterval(function () { loadVehicles(false); }, pollMs);
+      };
+
+      hudTimer = setInterval(updateHud, 1000);
+
+      if (params.get('debug') === '1') {
+        window.__vialxDebug = {
+          map: map,
+          state: function () {
+            return {
+              zoom: map.getZoom(),
+              badgeMode: badgeMode,
+              vehicles: vehicleMarkers.size,
+              lastVehicles: lastVehicles.length,
+              allStops: allStops.length,
+              stopMarkers: stopMarkers.size,
+              lastCount: lastCount,
+              lastRouteNumbers: lastRouteNumbers.slice(),
+              lastFeedTimestamp: lastFeedTimestamp
+            };
+          }
+        };
+      }
+
+      if (localMode) {
+        refreshEl.style.display = 'none';
+        offlineEl.textContent = 'Sem ligação à Carris. A tentar novamente…';
+        updatedEl.textContent = 'A carregar dados locais…';
+        if (!routeFilter) countEl.textContent = '–';
+      } else {
+        if (routeFilter) loadRouteInfo();
+        Promise.all([
+          getJson('/busstops').then(addStopMarkers).catch(function () { /* mapa continua útil */ }),
+          loadVehicles(false)
+        ]).then(function () {
+          refreshTimer = setInterval(function () { loadVehicles(false); }, pollMs);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

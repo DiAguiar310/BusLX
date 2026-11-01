@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="CarrisRebuild.Pages.MapPage"
+             BackgroundColor="{StaticResource AppBackground}"
+             Title="Mapa">
+  <Grid>
+    <WebView x:Name="Browser" Navigating="OnNavigating" Navigated="OnNavigated" />
+    <Grid x:Name="LoadingOverlay" BackgroundColor="{StaticResource AppBackground}">
+      <VerticalStackLayout Spacing="12" VerticalOptions="Center" HorizontalOptions="Center">
+        <Image Source="brand_mark.png" WidthRequest="64" HeightRequest="64"
+               Aspect="AspectFit" HorizontalOptions="Center" />
+        <ActivityIndicator IsRunning="True" Color="{StaticResource BrandBlue}"
+                           WidthRequest="32" HeightRequest="32" HorizontalOptions="Center" />
+        <Label Text="A carregar o mapa…" Style="{StaticResource MutedText}"
+               HorizontalOptions="Center" />
+      </VerticalStackLayout>
+    </Grid>
+  </Grid>
+</ContentPage>

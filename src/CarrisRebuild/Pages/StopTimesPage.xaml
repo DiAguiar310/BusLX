@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:CarrisRebuild.Models"
+             x:Class="CarrisRebuild.Pages.StopTimesPage" BackgroundColor="{StaticResource AppBackground}"
+             Title="Horários">
+  <Grid Padding="18,12,18,20" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="14">
+    <VerticalStackLayout Spacing="2">
+      <Label Text="Horários" FontSize="25" FontAttributes="Bold" />
+      <Label Text="Consulta as partidas por dia." Style="{StaticResource MutedText}" />
+    </VerticalStackLayout>
+
+    <Frame Grid.Row="1" Style="{StaticResource Card}">
+      <VerticalStackLayout Spacing="10">
+        <Label Text="DIA" Style="{StaticResource Eyebrow}" />
+        <DatePicker x:Name="Day" TextColor="{StaticResource BrandInk}"
+                    FontSize="14" BackgroundColor="Transparent" />
+        <Button Text="Carregar horários" Style="{StaticResource PrimaryButton}"
+                Clicked="OnLoad" />
+      </VerticalStackLayout>
+    </Frame>
+
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+      <BoxView Style="{StaticResource SectionBar}" />
+      <Label Grid.Column="1" Text="Partidas" Style="{StaticResource SectionTitle}" />
+    </Grid>
+
+    <CollectionView x:Name="List" Grid.Row="3" SelectionMode="None"
+                    VerticalScrollBarVisibility="Never">
+      <CollectionView.ItemsLayout>
+        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+      </CollectionView.ItemsLayout>
+      <CollectionView.ItemTemplate>
+        <DataTemplate x:DataType="models:StopTimeDto">
+          <Frame Style="{StaticResource Card}" Padding="14">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+              <Frame Style="{StaticResource RouteBadge}" Padding="8,4"
+                     BackgroundColor="{Binding RouteNumber, Converter={StaticResource RouteColor}}"
+                     BorderColor="{Binding RouteNumber, Converter={StaticResource RouteColor}}">
+                <Label Text="{Binding RouteNumber}" Style="{StaticResource RouteBadgeText}"
+                       FontSize="12"
+                       TextColor="{Binding RouteNumber, Converter={StaticResource RouteColor}, ConverterParameter=Text}" />
+              </Frame>
+              <Label Grid.Column="1" Text="Partida" Style="{StaticResource MutedText}"
+                     VerticalOptions="Center" />
+              <Label Grid.Column="2" Text="{Binding Time}" FontSize="18"
+                     FontAttributes="Bold" VerticalOptions="Center" />
+            </Grid>
+          </Frame>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+      <CollectionView.EmptyView>
+        <Label Text="Sem horários para este dia." Style="{StaticResource MutedText}"
+               HorizontalOptions="Center" Padding="0,26" />
+      </CollectionView.EmptyView>
+    </CollectionView>
+  </Grid>
+</ContentPage>

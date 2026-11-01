@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:pages="clr-namespace:CarrisRebuild.Pages"
+       x:Class="CarrisRebuild.AppShell"
+       Title="BusLX"
+       FlyoutBehavior="Disabled"
+       Shell.BackgroundColor="{StaticResource CardWhite}"
+       Shell.ForegroundColor="{StaticResource BrandInk}"
+       Shell.TitleColor="{StaticResource BrandInk}"
+       Shell.UnselectedColor="{StaticResource Muted}"
+       Shell.NavBarHasShadow="False"
+       Shell.TabBarBackgroundColor="{StaticResource BrandBlue}"
+       Shell.TabBarForegroundColor="{StaticResource BrandYellow}"
+       Shell.TabBarTitleColor="{StaticResource BrandYellow}"
+       Shell.TabBarUnselectedColor="#D6E7F5">
+  <TabBar>
+    <Tab Title="Início" Icon="tab_home.svg">
+      <ShellContent ContentTemplate="{DataTemplate pages:HomePage}" Route="home" />
+    </Tab>
+    <Tab Title="Paragens" Icon="tab_stops.svg">
+      <ShellContent ContentTemplate="{DataTemplate pages:StopsPage}" Route="stops" />
+    </Tab>
+    <Tab Title="Carreiras" Icon="tab_routes.svg">
+      <ShellContent ContentTemplate="{DataTemplate pages:RoutesPage}" Route="routes" />
+    </Tab>
+    <Tab Title="Mapa" Icon="tab_map.svg">
+      <ShellContent ContentTemplate="{DataTemplate pages:MapPage}" Route="map" />
+    </Tab>
+    <Tab Title="Mais" Icon="tab_more.svg">
+      <ShellContent ContentTemplate="{DataTemplate pages:AboutPage}" Route="more" />
+    </Tab>
+  </TabBar>
+</Shell>

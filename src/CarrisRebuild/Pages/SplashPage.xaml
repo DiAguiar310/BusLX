@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="CarrisRebuild.Pages.SplashPage" BackgroundColor="{StaticResource AppBackground}">
+  <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Padding="24" Spacing="10">
+    <Image Source="brand_mark.png" HeightRequest="96" WidthRequest="96"
+           Aspect="AspectFit" HorizontalOptions="Center" />
+    <Label Text="BusLX" FontSize="30" FontAttributes="Bold" HorizontalOptions="Center" />
+    <Label Text="Lisboa em movimento" Style="{StaticResource MutedText}"
+           HorizontalOptions="Center" />
+    <Label x:Name="VersionLabel" HorizontalOptions="Center" FontAttributes="Bold"
+           TextColor="{StaticResource BrandBlue}" Margin="0,6,0,0" />
+    <Label Text="Dados públicos da Carris" Style="{StaticResource MutedText}"
+           HorizontalOptions="Center" />
+  </VerticalStackLayout>
+</ContentPage>

@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Carris XTranPassenger API (observed contracts, clean-room)
+  version: 2.10.0
+  description: >
+    Contratos observados a partir de análise estática local do APK
+    pt.carris.tecmic 1.2.27 (IUrlManager: 18 operações). Sem código copiado.
+    Base real de produção: https://gateway.carris.pt/gateway/xtranpassengerapi
+    Este ficheiro documenta formas e parâmetros para permitir trocar o mock
+    pelo gateway real quando existirem chaves próprias. Não inclui chaves.
+servers:
+  - url: http://localhost:8080/mock
+    description: Mock local (fixtures com forma dos DTOs observados)
+  - url: https://gateway.carris.pt/gateway/xtranpassengerapi
+    description: Produção real (requer autenticação própria; não incluída)
+paths:
+  /api/v2.10/busstops:
+    get:
+      operationId: getBusStops
+      summary: Lista paragens
+      responses: {'200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/BusStopDto'}}}}}}
+  /api/v2.10/busstops/timestamp/{ts}:
+    get:
+      operationId: getBusStopsTs
+      summary: Paragens alteradas desde timestamp
+      parameters: [{name: ts, in: path, required: true, schema: {type: integer}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/busstops/routenumber/{route}/laststation/{last}/startLat/{lat}/startLon/{lon}/numberbusstops/{n}:
+    get:
+      operationId: getPlannedRouteBusStops
+      summary: Paragens de um itinerário planeado
+      parameters: [{name: route, in: path, required: true, schema: {type: string}}, {name: last, in: path, required: true, schema: {type: string}}, {name: lat, in: path, required: true, schema: {type: number}}, {name: lon, in: path, required: true, schema: {type: number}}, {name: n, in: path, required: true, schema: {type: integer}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/routes:
+    get:
+      operationId: getRoutes
+      summary: Lista carreiras
+      responses: {'200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/RouteDto'}}}}}}
+  /api/v2.10/routes/timestamp/{ts}:
+    get:
+      operationId: getRoutesTs
+      summary: Carreiras alteradas desde timestamp
+      parameters: [{name: ts, in: path, required: true, schema: {type: integer}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/routes/{number}:
+    get:
+      operationId: getRoute
+      summary: Detalhe de carreira + variantes
+      parameters: [{name: number, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/FullRouteDto'}}}}}
+  /api/v2.10/Routes/busStop/{id}:
+    get:
+      operationId: getRoutes4BusStop
+      summary: Carreiras que servem uma paragem
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/routes/{number}/from/{from}/until/{until}:
+    get:
+      operationId: getRouteFromUntil
+      summary: Troço de carreira entre paragens
+      parameters: [{name: number, in: path, required: true, schema: {type: string}}, {name: from, in: path, required: true, schema: {type: string}}, {name: until, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/estimations/estimationbusstop/{id}/top/10:
+    get:
+      operationId: getEstimations
+      summary: Tempo real - próximas 10 passagens numa paragem
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/EstimationDto'}}}}}}
+  /api/v2.10/stoptimes/routeNumber/{route}/direction/{dir}/stop/{stop}/date/{date}:
+    get:
+      operationId: getStopTimes
+      summary: Horários de uma paragem numa carreira/direção/data
+      parameters: [{name: route, in: path, required: true, schema: {type: string}}, {name: dir, in: path, required: true, schema: {type: string}}, {name: stop, in: path, required: true, schema: {type: string}}, {name: date, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/vehicleStatuses/routeNumber/{route}:
+    get:
+      operationId: getVehicleStatuses
+      summary: Viaturas em circulação numa carreira (mapa tempo real)
+      parameters: [{name: route, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/planner/startLat/{slat}/startLon/{slon}/endLat/{elat}/endLon/{elon}/start/{start}/language/{lang}:
+    get:
+      operationId: planVoyage
+      summary: Planeador porta-a-porta
+      parameters: [{name: slat, in: path, required: true, schema: {type: number}}, {name: slon, in: path, required: true, schema: {type: number}}, {name: elat, in: path, required: true, schema: {type: number}}, {name: elon, in: path, required: true, schema: {type: number}}, {name: start, in: path, required: true, schema: {type: string}}, {name: lang, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/SolutionDto'}}}}}}
+  /api/v2.10/geocoding/suggest/{q}:
+    get:
+      operationId: suggest
+      summary: Sugestões de moradas/locais
+      parameters: [{name: q, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/geocoding/reverse/lat/{lat}/lng/{lng}:
+    get:
+      operationId: reverseGeocode
+      summary: Morada a partir de coordenadas
+      parameters: [{name: lat, in: path, required: true, schema: {type: number}}, {name: lng, in: path, required: true, schema: {type: number}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/geocoding/fromId/{id}:
+    get:
+      operationId: geocodeById
+      summary: Detalhe de local por id
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /api/v2.10/alerts:
+    get:
+      operationId: getAlerts
+      summary: Alertas de serviço
+      responses: {'200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/AlertDto'}}}}}}
+  /api/v2.11/register:
+    post:
+      operationId: registerTerms
+      summary: Registo de aceitação de termos (v2.11, outros operadores)
+      responses: {'200': {description: OK}}
+components:
+  schemas:
+    BusStopDto: {type: object, properties: {id: {type: string}, number: {type: string}, name: {type: string}, lat: {type: number}, lng: {type: number}}}
+    RouteDto: {type: object, properties: {number: {type: string}, name: {type: string}, direction: {type: string}}}
+    FullRouteDto: {type: object, properties: {number: {type: string}, variants: {type: array, items: {$ref: '#/components/schemas/VariantDto'}}}}
+    VariantDto: {type: object, properties: {id: {type: string}, headsign: {type: string}}}
+    EstimationDto: {type: object, properties: {routeNumber: {type: string}, headsign: {type: string}, minutes: {type: integer}, vehicleId: {type: string}}}
+    StopTimeDto: {type: object, properties: {time: {type: string}, routeNumber: {type: string}}}
+    SolutionDto: {type: object, properties: {summary: {type: string}, steps: {type: array, items: {$ref: '#/components/schemas/SolutionStepDto'}}}}
+    SolutionStepDto: {type: object, properties: {mode: {type: string}, instruction: {type: string}, routeNumber: {type: string}}}
+    AlertDto: {type: object, properties: {id: {type: integer}, routeNumber: {type: string}, description: {type: string}}}
